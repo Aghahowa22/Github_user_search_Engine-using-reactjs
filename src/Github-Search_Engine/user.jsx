@@ -1,6 +1,10 @@
-import React from "react";
+import PropTypes from "prop-types";
 
 const User = ({ userBio }) => {
+  if (!userBio || !userBio.login) {
+    return null;
+  }
+
   const {
     avatar_url,
     followers,
@@ -11,7 +15,7 @@ const User = ({ userBio }) => {
     created_at,
   } = userBio;
 
-  const createdDate = new Date(created_at);
+  const createdDate = created_at ? new Date(created_at) : null;
 
   return (
     <div className="user">
@@ -22,11 +26,16 @@ const User = ({ userBio }) => {
       <div>
         <a href={`https://github.com/${login}`}>{name || login}</a>
         <p>
-          User Joined on {""}
-          {`${createdDate.getDate()} ${createdDate.toLocaleString("en-us", {
-            month: "short",
-          })} ${createdDate.getFullYear()}`}{" "}
-          {""}
+          {createdDate &&
+          createdDate instanceof Date &&
+          !Number.isNaN(createdDate)
+            ? `User Joined on ${createdDate.getDate()} ${createdDate.toLocaleString(
+                "en-us",
+                {
+                  month: "short",
+                },
+              )} ${createdDate.getFullYear()}`
+            : "User joined date unavailable"}
         </p>
       </div>
       <div>
@@ -43,6 +52,18 @@ const User = ({ userBio }) => {
       </div>
     </div>
   );
+};
+
+User.propTypes = {
+  userBio: PropTypes.shape({
+    avatar_url: PropTypes.string,
+    followers: PropTypes.number,
+    following: PropTypes.number,
+    public_repos: PropTypes.number,
+    name: PropTypes.string,
+    login: PropTypes.string.isRequired,
+    created_at: PropTypes.string,
+  }).isRequired,
 };
 
 export default User;

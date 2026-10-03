@@ -1,34 +1,60 @@
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import User from "./user";
 
 const GithubProfileFinder = () => {
-    // for the input value
   const [userName, setUserName] = useState("Aghahowa22");
-  //   for the api link
   const [userData, setUserData] = useState(null);
-
-   //   for loading the api
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const fetchGithubUserData = useCallback(
+    async (usernameToFetch, shouldClearInput = true) => {
+      const normalizedUser = usernameToFetch?.trim();
+
+      if (!normalizedUser) {
+        setError("Please enter a username.");
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      try {
+        const res = await fetch(
+          `https://api.github.com/users/${normalizedUser}`,
+        );
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || "GitHub user not found.");
+        }
+
+        setUserData(data);
+        if (shouldClearInput) {
+          setUserName("");
+        }
+      } catch (err) {
+        setUserData(null);
+        setError(err.message || "Unable to fetch GitHub user data.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   const handleSubmit = () => {
-    fetchGithubUserData();
+    if (userName.trim() === "") {
+      setError("Please enter a username.");
+      return;
+    }
+
+    fetchGithubUserData(userName);
   };
 
-  async function fetchGithubUserData() {
-    setLoading(true);
-    const res = await fetch(`https://api.github.com/users/${userName}`);
-    const data = await res.json();
-    console.log(data);
-    if (data) {
-      setUserData(data);
-      setLoading(false);
-      setUserName("");
-    }
-  }
-
   useEffect(() => {
-    fetchGithubUserData();
-  }, []);
+    fetchGithubUserData("Aghahowa22", false);
+  }, [fetchGithubUserData]);
 
   if (loading) {
     return <h3>Loading data please wait...</h3>;
@@ -36,9 +62,9 @@ const GithubProfileFinder = () => {
 
   return (
     <div className="github-profile-container">
-        <h1>Github Users Search Engine.</h1>
-        <p>Search all users on Github</p>
-        
+      <h1>Github Users Search Engine.</h1>
+      <p>Search all users on Github</p>
+
       <div className="input-wrapper">
         <input
           name="search-by-username"
@@ -46,11 +72,13 @@ const GithubProfileFinder = () => {
           placeholder="Enter Username..."
           value={userName}
           onChange={(event) => setUserName(event.target.value)}
+          required
         />
         <button onClick={handleSubmit}>Search</button>
       </div>
 
-      {userData !== null ? <User userBio={userData} /> : null}
+      {error ? <p className="error-message">{error}</p> : null}
+      {userData ? <User userBio={userData} /> : null}
     </div>
   );
 };
